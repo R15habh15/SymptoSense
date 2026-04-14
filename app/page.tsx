@@ -77,7 +77,7 @@ export default function LandingPage() {
       <PublicNav activeLink="home" />
 
       {/* ── Hero ── */}
-      <section style={{
+      <section className="mobile-padding" style={{
         padding: '80px 48px 72px',
         background: 'linear-gradient(160deg, #FFF5F5 0%, #FFFFFF 50%, #FFF5F5 100%)',
         textAlign: 'center',
@@ -142,7 +142,7 @@ export default function LandingPage() {
         </div>
 
         {/* Dashboard preview card */}
-        <div className="anim-fadeup" style={{ maxWidth: '900px', margin: '64px auto 0', position: 'relative', zIndex: 1 }}>
+        <div className="anim-fadeup hide-mobile" style={{ maxWidth: '900px', margin: '64px auto 0', position: 'relative', zIndex: 1 }}>
           <div style={{
             background: 'white', borderRadius: '16px',
             border: '1px solid var(--border)',
@@ -200,7 +200,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ── */}
-      <section id="features" style={{ padding: '80px 48px', background: 'var(--bg)' }}>
+      <section className="mobile-padding" id="features" style={{ padding: '80px 48px', background: 'var(--bg)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--red)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>System Architecture</div>
@@ -212,7 +212,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
             {FEATURES.map((f, i) => (
               <div key={i} className="card card-lift" style={{ padding: '28px' }}>
                 <div style={{
@@ -230,7 +230,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section id="how-it-works" style={{ padding: '80px 48px', background: 'white' }}>
+      <section className="mobile-padding" id="how-it-works" style={{ padding: '80px 48px', background: 'white' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--red)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>The Workflow</div>
@@ -239,7 +239,7 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             {HOW_IT_WORKS.map((s, i) => (
               <div key={i} className="card" style={{ padding: '28px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                 <div style={{
@@ -259,7 +259,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA Banner ── */}
-      <section style={{
+      <section className="mobile-padding" style={{
         padding: '80px 48px',
         background: 'linear-gradient(135deg, #FC8181 0%, #B91C1C 50%, #7F1D1D 100%)',
         textAlign: 'center',
@@ -290,7 +290,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ padding: '40px 48px', background: 'var(--text-1)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <footer className="mobile-padding" style={{ padding: '40px 48px', background: 'var(--text-1)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>

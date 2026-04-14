@@ -1,5 +1,5 @@
 'use client';
-
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../context/AppContext';
 
@@ -48,6 +48,11 @@ const Icons = {
       <line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   ),
+  Menu: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/>
+    </svg>
+  ),
 };
 
 function NavLink({ id, icon, label, active, onClick }: {
@@ -73,10 +78,13 @@ function NavLink({ id, icon, label, active, onClick }: {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { triageScreen, logout, cancelTest } = useApp();
   const router = useRouter();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const isTestActive = triageScreen === 'questions' || triageScreen === 'loading';
 
   const handleHome = () => {
     if (isTestActive) cancelTest();
+    setIsMobileMenuOpen(false);
   };
 
   const handleLogout = () => {
@@ -84,177 +92,152 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     router.push('/');
   };
 
-  return (
-    // Use fixed height + overflow on wrapper so sidebar is always full-height
-    <div style={{
-      display: 'flex',
-      height: '100vh',
-      overflow: 'hidden',
-      background: 'var(--bg)',
-    }}>
+  const SidebarContent = () => (
+    <>
+      {/* Logo */}
+      <div style={{
+        padding: '18px 18px 14px',
+        borderBottom: '1px solid #F1F5F9',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '10px',
+            background: 'linear-gradient(135deg, #FC8181, #E53E3E)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', flexShrink: 0,
+            boxShadow: '0 2px 8px rgb(229 62 62 / 0.3)',
+          }}>
+            <Icons.HeartPulse />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontSize: '14.5px', fontWeight: '800',
+              color: '#1A202C', letterSpacing: '-0.3px',
+              whiteSpace: 'nowrap',
+            }}>
+              Sympto<span style={{ color: '#E53E3E' }}>Sense</span>
+            </div>
+          </div>
+          {isMobileMenuOpen && (
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#A0AEC0', cursor: 'pointer' }}
+            >
+              <Icons.X />
+            </button>
+          )}
+        </div>
+      </div>
 
-      {/* ── Sidebar ── fixed height, never collapses ── */}
-      <aside style={{
-        width: '232px',
-        minWidth: '232px',
-        height: '100vh',
-        background: '#FFFFFF',
-        borderRight: '1px solid var(--border)',
+      {/* Nav items */}
+      <nav style={{
+        flex: 1,
+        padding: '10px 10px',
         display: 'flex',
         flexDirection: 'column',
-        flexShrink: 0,
+        gap: '2px',
         overflowY: 'auto',
-        overflowX: 'hidden',
-        boxShadow: 'var(--shadow-sm)',
       }}>
+        <NavLink
+          id="nav-home"
+          icon={<Icons.Home />}
+          label="Home"
+          active={!isTestActive && (triageScreen === 'dashboard' || triageScreen === 'language' || triageScreen === 'person')}
+          onClick={handleHome}
+        />
+        <NavLink
+          id="nav-reports"
+          icon={<Icons.FileText />}
+          label="Past Reports"
+          active={triageScreen === 'results'}
+          onClick={() => { setIsMobileMenuOpen(false); }}
+        />
+        <NavLink
+          id="nav-settings"
+          icon={<Icons.Settings />}
+          label="Settings"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
 
-        {/* Logo */}
-        <div style={{
-          padding: '18px 18px 14px',
-          borderBottom: '1px solid #F1F5F9',
-          flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '36px', height: '36px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, #FC8181, #E53E3E)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', flexShrink: 0,
-              boxShadow: '0 2px 8px rgb(229 62 62 / 0.3)',
-            }}>
-              <Icons.HeartPulse />
+        {isTestActive && (
+          <div style={{ marginTop: '12px', padding: '12px 13px', borderRadius: '10px', background: '#FFF5F5', border: '1.5px solid #FEB2B2' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
+              <span style={{ color: '#E53E3E' }}><Icons.Activity /></span>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: '#C53030' }}>Test in Progress</span>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{
-                fontSize: '14.5px', fontWeight: '800',
-                color: '#1A202C', letterSpacing: '-0.3px',
-                whiteSpace: 'nowrap',
-              }}>
-                Sympto<span style={{ color: '#E53E3E' }}>Sense</span>
-              </div>
-              <div style={{ fontSize: '10px', color: '#A0AEC0', marginTop: '1px' }}>
-                v1.0.4 · AI Triage
-              </div>
-            </div>
+            <button onClick={() => { cancelTest(); setIsMobileMenuOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '500' }}>
+              <Icons.X /> Cancel test
+            </button>
+          </div>
+        )}
+      </nav>
+
+      {/* User section */}
+      <div style={{ padding: '10px 10px', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', marginBottom: '6px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #FC8181, #E53E3E)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '11px' }}>RS</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A202C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Rahul Sharma</div>
+            <div style={{ fontSize: '11px', color: '#A0AEC0' }}>Mumbai, India</div>
           </div>
         </div>
+        <NavLink id="nav-mobile-logout" icon={<Icons.LogOut />} label="Log out" onClick={handleLogout} />
+      </div>
+    </>
+  );
 
-        {/* Nav items */}
-        <nav style={{
-          flex: 1,
-          padding: '10px 10px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '2px',
-          overflowY: 'auto',
-        }}>
-          <div style={{
-            fontSize: '10px', fontWeight: '700',
-            color: '#A0AEC0', padding: '8px 12px 4px',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-          }}>
-            Navigation
-          </div>
-
-          <NavLink
-            id="nav-home"
-            icon={<Icons.Home />}
-            label="Home"
-            active={!isTestActive && (triageScreen === 'dashboard' || triageScreen === 'language' || triageScreen === 'person')}
-            onClick={handleHome}
-          />
-          <NavLink
-            id="nav-reports"
-            icon={<Icons.FileText />}
-            label="Past Reports"
-            active={triageScreen === 'results'}
-            onClick={() => {}}
-          />
-          <NavLink
-            id="nav-settings"
-            icon={<Icons.Settings />}
-            label="Settings"
-          />
-
-          {/* Active test indicator */}
-          {isTestActive && (
-            <div style={{
-              marginTop: '12px',
-              padding: '12px 13px',
-              borderRadius: '10px',
-              background: '#FFF5F5',
-              border: '1.5px solid #FEB2B2',
-            }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '7px',
-                marginBottom: '8px',
-              }}>
-                <span style={{ color: '#E53E3E' }}><Icons.Activity /></span>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#C53030' }}>
-                  Test in Progress
-                </span>
-              </div>
-              <button
-                id="nav-cancel-test"
-                onClick={cancelTest}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  fontSize: '11.5px', color: '#E53E3E',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: 'inherit', padding: 0, fontWeight: '500',
-                }}
-              >
-                <Icons.X /> Cancel &amp; return
-              </button>
-            </div>
-          )}
-        </nav>
-
-        {/* User section — pinned to bottom */}
-        <div style={{
-          padding: '10px 10px',
-          borderTop: '1px solid #F1F5F9',
-          flexShrink: 0,
-        }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '10px 12px', marginBottom: '6px',
-            borderRadius: '10px',
-            background: '#F8FAFC',
-            border: '1px solid #E2E8F0',
-          }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #FC8181, #E53E3E)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: '700', fontSize: '11px',
-              flexShrink: 0,
-            }}>RS</div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{
-                fontSize: '13px', fontWeight: '600', color: '#1A202C',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                Rahul Sharma
-              </div>
-              <div style={{ fontSize: '11px', color: '#A0AEC0' }}>Mumbai, India</div>
-            </div>
-          </div>
-          <NavLink id="nav-logout" icon={<Icons.LogOut />} label="Log out" onClick={handleLogout} />
-        </div>
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)', flexDirection: 'row' }}>
+      
+      {/* ── Desktop Sidebar (Hidden on mobile via CSS) ── */}
+      <aside className="hide-mobile" style={{
+        width: '232px', minWidth: '232px', height: '100vh', background: '#FFFFFF',
+        borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column',
+        flexShrink: 0, overflowY: 'auto', boxShadow: 'var(--shadow-sm)', zIndex: 10,
+      }}>
+        <SidebarContent />
       </aside>
 
-      {/* ── Main content area ── scrollable independently ── */}
-      <main style={{
-        flex: 1,
-        height: '100vh',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        minWidth: 0,
-        background: 'var(--bg)',
-      }}>
-        {children}
-      </main>
+      {/* ── Mobile Mobile Nav overlay ── */}
+      {isMobileMenuOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} onClick={() => setIsMobileMenuOpen(false)}>
+          <div 
+            style={{ width: '260px', height: '100%', background: 'white', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column' }} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SidebarContent />
+          </div>
+        </div>
+      )}
+
+      {/* ── Layout Wrapper ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', minWidth: 0 }}>
+        
+        {/* ── Mobile Header (Visible only on mobile via CSS) ── */}
+        <header className="show-mobile" style={{
+          height: '56px', background: 'white', borderBottom: '1px solid var(--border)',
+          alignItems: 'center', padding: '0 16px', flexShrink: 0,
+        }}>
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            style={{ background: 'none', border: 'none', color: '#1A202C', cursor: 'pointer', padding: '8px 0', marginRight: '16px' }}
+          >
+            <Icons.Menu />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+             <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+               <Icons.HeartPulse />
+             </div>
+             <span style={{ fontSize: '14px', fontWeight: '800', color: '#1A202C' }}>Sympto<span style={{ color: 'var(--red)' }}>Sense</span></span>
+          </div>
+        </header>
+
+        {/* ── Main content area ── */}
+        <main className="mobile-main" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

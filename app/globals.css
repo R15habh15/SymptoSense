@@ -334,9 +334,12 @@ html, body {
     --text-xl: 20px;
   }
 
-  /* ── Sidebar ── */
-  aside {
-    display: none !important; /* Hide Sidebar on mobile for now */
+  /* ── Sidebar & Header ── */
+  aside.hide-mobile {
+    display: none !important;
+  }
+  .show-mobile {
+    display: flex !important;
   }
 
   /* ── Layouts ── */
@@ -366,8 +369,7 @@ html, body {
     padding: 20px 16px !important;
   }
 
-  /* ── Dashboard ── */
-  .dashboard-main {
+  .dashboard-main, .mobile-main {
     padding: 20px 16px !important;
     margin-left: 0 !important;
   }
@@ -383,4 +385,18 @@ html, body {
     width: 100%;
     margin-bottom: 8px;
   }
+
+  /* ── Utility ── */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  h1 {
+    font-size: 32px !important;
+    letter-spacing: -1px !important;
+  }
+}
+
+.show-mobile {
+  display: none;
 }
