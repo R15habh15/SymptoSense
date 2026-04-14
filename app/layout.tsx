@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from "./context/AppContext";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "SymptoSense – Smart Symptom Triage System",
@@ -24,9 +25,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AppProvider>
-          {children}
-        </AppProvider>
+        <Providers>
+          <AppProvider>
+            {children}
+          </AppProvider>
+        </Providers>
       </body>
     </html>
   );

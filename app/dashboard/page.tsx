@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useApp } from '../context/AppContext';
 import AppShell from '../components/AppShell';
 import Dashboard from '../components/Dashboard';
@@ -12,17 +13,18 @@ import LoadingScreen from '../components/LoadingScreen';
 import ResultsPage from '../components/ResultsPage';
 
 export default function DashboardRoute() {
-  const { isLoggedIn, triageScreen } = useApp();
+  const { data: session, status } = useSession();
+  const { triageScreen } = useApp();
   const router = useRouter();
 
-  // Auth guard — redirect to /login if not authenticated
   useEffect(() => {
-    if (!isLoggedIn) {
-      router.push('/login');
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
     }
-  }, [isLoggedIn, router]);
+  }, [status, router]);
 
-  if (!isLoggedIn) return null;
+  if (status === 'loading') return null;
+  if (!session) return null;
 
   return (
     <AppShell>

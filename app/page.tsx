@@ -116,7 +116,7 @@ export default function LandingPage() {
             <button
               id="hero-getstarted-btn"
               className="btn btn-primary"
-              onClick={() => router.push('/signup')}
+              onClick={() => router.push('/auth/signup')}
               style={{ padding: '14px 32px', fontSize: '15px', gap: '8px', boxShadow: '0 8px 20px -4px rgba(185, 28, 28, 0.4)' }}
             >
               Start Free Assessment <ArrowRight />
@@ -124,7 +124,7 @@ export default function LandingPage() {
             <button
               id="hero-signin-btn"
               className="btn btn-outline"
-              onClick={() => router.push('/login')}
+              onClick={() => router.push('/auth/login')}
               style={{ padding: '14px 32px', fontSize: '15px' }}
             >
               Sign in to Dashboard
@@ -273,7 +273,7 @@ export default function LandingPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
           <button
             id="cta-getstarted-btn"
-            onClick={() => router.push('/signup')}
+            onClick={() => router.push('/auth/signup')}
             className="btn"
             style={{
               background: 'white', color: 'var(--red)', border: 'none',

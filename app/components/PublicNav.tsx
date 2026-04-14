@@ -86,8 +86,8 @@ export default function PublicNav({ activeLink }: PublicNavProps) {
 
         {/* Desktop CTA buttons */}
         <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button className="btn btn-outline" onClick={() => router.push('/login')} style={{ padding: '8px 17px' }}>Sign in</button>
-          <button className="btn btn-primary" onClick={() => router.push('/signup')} style={{ padding: '8px 17px' }}>Get started</button>
+          <button className="btn btn-outline" onClick={() => router.push('/auth/login')} style={{ padding: '8px 17px' }}>Sign in</button>
+          <button className="btn btn-primary" onClick={() => router.push('/auth/signup')} style={{ padding: '8px 17px' }}>Get started</button>
         </div>
 
         {/* Mobile Burger Toggle */}
@@ -120,8 +120,8 @@ export default function PublicNav({ activeLink }: PublicNavProps) {
                 ))}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border-faint)', paddingTop: '24px' }}>
-                <button className="btn btn-primary" onClick={() => router.push('/signup')}>Get Started Free</button>
-                <button className="btn btn-outline" onClick={() => router.push('/login')}>Sign In</button>
+                <button className="btn btn-primary" onClick={() => router.push('/auth/signup')}>Get Started Free</button>
+                <button className="btn btn-outline" onClick={() => router.push('/auth/login')}>Sign In</button>
               </div>
            </div>
         </div>

@@ -203,7 +203,7 @@ export default function AboutPage() {
         </p>
         <button
           className="btn"
-          onClick={() => router.push('/login')}
+          onClick={() => router.push('/auth/login')}
           style={{ background: 'white', color: '#E53E3E', padding: '13px 28px', fontSize: '15px', fontWeight: '700', gap: '8px', boxShadow: '0 4px 14px rgb(0 0 0 / 0.15)' }}
         >
           Start Assessment <ArrowRight />
