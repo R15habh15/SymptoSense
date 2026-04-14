@@ -190,7 +190,7 @@ export default function QuestionPanel() {
 
         {/* Options grid */}
         {q.options && (
-          <div className="mobile-grid-1" style={{
+          <div className="mobile-grid-questions" style={{
             display: 'grid',
             gridTemplateColumns: q.options.length > 4 ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
             gap: '12px',

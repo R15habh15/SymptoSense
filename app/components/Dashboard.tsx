@@ -146,7 +146,7 @@ export default function Dashboard() {
         marginBottom: '20px',
         background: 'white',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+        <div className="mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '4px' }}>
               Ready to assess your symptoms?
@@ -154,7 +154,7 @@ export default function Dashboard() {
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', marginBottom: '10px' }}>
               Complete 8 targeted questions for an AI-powered triage result.
             </div>
-            <div className="code-block" style={{ display: 'inline-block', fontSize: '10.5px' }}>
+            <div className="code-block hide-mobile" style={{ display: 'inline-block', fontSize: '10.5px' }}>
               <span className="kw">POST</span> <span className="str">/api/triage/start</span>
               <span className="cm"> ← Flask · PostgreSQL</span>
             </div>
