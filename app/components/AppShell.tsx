@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { useApp } from '../context/AppContext';
 
 const Icons = {
@@ -76,20 +77,28 @@ function NavLink({ id, icon, label, active, onClick }: {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { triageScreen, logout, cancelTest } = useApp();
+  const { triageScreen, cancelTest, setTriageScreen } = useApp();
+  const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   const isTestActive = triageScreen === 'questions' || triageScreen === 'loading';
+
+  // Derive display name and initials from session
+  const userName = session?.user?.name || session?.user?.email?.split('@')[0] || 'User';
+  const userEmail = session?.user?.email || '';
+  const userImage = session?.user?.image || null;
+  const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleHome = () => {
     if (isTestActive) cancelTest();
+    router.push('/dashboard');
     setIsMobileMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/' });
   };
 
   const SidebarContent = () => (
@@ -143,21 +152,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           id="nav-home"
           icon={<Icons.Home />}
           label="Home"
-          active={!isTestActive && (triageScreen === 'dashboard' || triageScreen === 'language' || triageScreen === 'person')}
+          active={pathname === '/dashboard'}
           onClick={handleHome}
         />
         <NavLink
           id="nav-reports"
           icon={<Icons.FileText />}
           label="Past Reports"
-          active={triageScreen === 'results'}
-          onClick={() => { setIsMobileMenuOpen(false); }}
+          active={pathname === '/dashboard/reports'}
+          onClick={() => { router.push('/dashboard/reports'); setIsMobileMenuOpen(false); }}
         />
         <NavLink
           id="nav-settings"
           icon={<Icons.Settings />}
           label="Settings"
-          onClick={() => setIsMobileMenuOpen(false)}
+          active={pathname === '/dashboard/settings'}
+          onClick={() => { router.push('/dashboard/settings'); setIsMobileMenuOpen(false); }}
         />
 
         {isTestActive && (
@@ -176,10 +186,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* User section */}
       <div style={{ padding: '10px 10px', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', marginBottom: '6px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #FC8181, #E53E3E)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '11px' }}>RS</div>
+          {userImage ? (
+            <img src={userImage} alt={userName} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #FC8181, #E53E3E)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '11px', flexShrink: 0 }}>{initials}</div>
+          )}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A202C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Rahul Sharma</div>
-            <div style={{ fontSize: '11px', color: '#A0AEC0' }}>Mumbai, India</div>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A202C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
+            <div style={{ fontSize: '11px', color: '#A0AEC0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>
           </div>
         </div>
         <NavLink id="nav-mobile-logout" icon={<Icons.LogOut />} label="Log out" onClick={handleLogout} />
@@ -230,6 +244,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                <Icons.HeartPulse />
              </div>
              <span style={{ fontSize: '14px', fontWeight: '800', color: '#1A202C' }}>Sympto<span style={{ color: 'var(--red)' }}>Sense</span></span>
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            {userImage ? (
+              <img src={userImage} alt={userName} style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '11px' }}>{initials}</div>
+            )}
           </div>
         </header>
 

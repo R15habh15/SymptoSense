@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { useSession } from 'next-auth/react';
 
 // Dashboard-level screens only (triage flow)
 export type TriageScreen =
@@ -15,22 +16,13 @@ export type Language = 'English' | 'Hindi' | 'Marathi';
 export type PersonType = 'self' | 'family';
 export type RiskLevel = 'High' | 'Medium' | 'Low';
 
-export interface Report {
-  date: string;
-  riskLevel: RiskLevel;
-  score: number;
-  symptoms: string[];
-}
-
 export interface AppState {
-  isLoggedIn: boolean;
   triageScreen: TriageScreen;
   language: Language | null;
   personType: PersonType | null;
   currentQuestion: number;
   totalQuestions: number;
   selectedAnswers: Record<number, string>;
-  mockReports: Report[];
   riskScore: number;
   riskLevel: RiskLevel;
 }
@@ -42,32 +34,23 @@ interface AppContextType extends AppState {
   setAnswer: (qIndex: number, answer: string) => void;
   goToPrevQuestion: () => void;
   goToNextQuestion: () => void;
-  login: () => void;
-  logout: () => void;
   startTest: () => void;
   cancelTest: () => void;
 }
 
-const mockReports: Report[] = [
-  { date: '2026-04-14', riskLevel: 'High',   score: 22, symptoms: ['fever', 'chest pain'] },
-  { date: '2026-04-10', riskLevel: 'Medium', score: 14, symptoms: ['headache'] },
-  { date: '2026-03-29', riskLevel: 'Low',    score: 5,  symptoms: ['cough'] },
-];
-
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { data: session } = useSession();
   const [state, setState] = useState<AppState>({
-    isLoggedIn: false,
     triageScreen: 'dashboard',
     language: null,
     personType: null,
     currentQuestion: 0,
     totalQuestions: 8,
     selectedAnswers: {},
-    mockReports,
-    riskScore: 22,
-    riskLevel: 'High',
+    riskScore: 0,
+    riskLevel: 'Low',
   });
 
   const setTriageScreen = (screen: TriageScreen) =>
@@ -91,6 +74,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentQuestion: Math.max(0, s.currentQuestion - 1),
     }));
 
+  // Save completed test to database
+  const saveTestToDatabase = async (
+    answers: Record<number, string>,
+    score: number,
+    urgency: RiskLevel,
+    userId?: string
+  ) => {
+    try {
+      const symptoms = (answers[1] || '').split(',').filter(Boolean);
+      const primaryCategory = symptoms[0] || 'general';
+
+      const getRecommendation = (s: number) => {
+        if (s >= 20) return 'Seek emergency care immediately.';
+        if (s >= 10) return 'Consult your doctor within 24 hours.';
+        return 'Monitor symptoms at home. See a doctor if they worsen.';
+      };
+
+      // Format answers as array for storage
+      const answersArray = Object.entries(answers).map(([qId, answer]) => ({
+        questionId: `q${qId}`,
+        answer,
+        timestamp: Date.now(),
+      }));
+
+      const payload = {
+        userId: userId || null,
+        personName: 'Myself',
+        isSelf: true,
+        language: 'en',
+        answers: answersArray,
+        result: {
+          score,
+          urgency,
+          factors: symptoms.map((s) => ({ id: s, label: s, score: 0, isRedFlag: false, category: 'general' })),
+          primaryCategory,
+          recommendation: getRecommendation(score),
+          hasRedFlag: score >= 20,
+          symptomCount: symptoms.length,
+          highestSeverity: urgency,
+        },
+      };
+
+      // Create session first, then complete it
+      const createRes = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: payload.userId, personName: payload.personName, isSelf: true, language: 'en' }),
+      });
+      const { sessionId } = await createRes.json();
+
+      // Complete the session with answers and result
+      await fetch('/api/sessions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, answers: payload.answers, result: payload.result }),
+      });
+    } catch (err) {
+      console.error('Failed to save test to database:', err);
+    }
+  };
+
   const goToNextQuestion = () => {
     setState((s) => {
       const next = s.currentQuestion + 1;
@@ -99,10 +143,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         let score = 0;
         const ans = s.selectedAnswers;
 
-        // Q1: Age Group
         if (ans[0] === 'elderly') score += 2;
 
-        // Q2: Symptoms (Base weights)
         const symptoms = ans[1] ? ans[1].split(',') : [];
         symptoms.forEach(sym => {
           if (sym === 'fever') score += 2;
@@ -113,37 +155,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (sym === 'fatigue') score += 1;
         });
 
-        // Q3: Severity (Multiplier)
         const sevMult = ans[2] === 'severe' ? 3 : ans[2] === 'moderate' ? 2 : 1;
         score = score * sevMult;
 
-        // Q4: Duration
         if (ans[3] === 'days') score += 2;
         if (ans[3] === 'long') score += 4;
-
-        // Q5: Progression
         if (ans[4] === 'worse') score += 2;
-
-        // Q6: Critical Check
         if (ans[5] === 'chest_pain' || ans[5] === 'breathing') score += 5;
 
-        // Q7: History
         const history = ans[6] ? ans[6].split(',') : [];
         if (history.includes('diabetes') || history.includes('heart')) score += 2;
 
-        // Q8: Impact
         if (ans[7] === 'unable') score += 3;
         if (ans[7] === 'slight') score += 1;
 
-        // Cap score at 30
         const finalScore = Math.min(30, score);
-        const finalLevel = finalScore >= 20 ? 'High' : finalScore >= 10 ? 'Medium' : 'Low';
+        const finalLevel: RiskLevel = finalScore >= 20 ? 'High' : finalScore >= 10 ? 'Medium' : 'Low';
 
         return {
           ...s,
           triageScreen: 'loading',
           riskScore: finalScore,
-          riskLevel: finalLevel
+          riskLevel: finalLevel,
         };
       }
       return { ...s, currentQuestion: next };
@@ -152,36 +185,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       setState((s) => {
         if (s.triageScreen === 'loading') {
-          const newReport: Report = {
-            date: new Date().toISOString().split('T')[0],
-            riskLevel: s.riskLevel,
-            score: s.riskScore,
-            symptoms: (s.selectedAnswers[1] || '').split(',')
-          };
-          return {
-            ...s,
-            triageScreen: 'results',
-            mockReports: [newReport, ...s.mockReports]
-          };
+          // Save to database (fire and forget)
+          const userId = (session?.user as any)?.id;
+          saveTestToDatabase(s.selectedAnswers, s.riskScore, s.riskLevel, userId);
+          return { ...s, triageScreen: 'results' };
         }
         return s;
       });
     }, 2500);
   };
-
-  const login = () =>
-    setState((s) => ({ ...s, isLoggedIn: true, triageScreen: 'dashboard' }));
-
-  const logout = () =>
-    setState((s) => ({
-      ...s,
-      isLoggedIn: false,
-      triageScreen: 'dashboard',
-      language: null,
-      personType: null,
-      currentQuestion: 0,
-      selectedAnswers: {},
-    }));
 
   const startTest = () =>
     setState((s) => ({ ...s, triageScreen: 'language' }));
@@ -205,8 +217,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAnswer,
         goToPrevQuestion,
         goToNextQuestion,
-        login,
-        logout,
         startTest,
         cancelTest,
       }}

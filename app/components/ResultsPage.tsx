@@ -34,7 +34,7 @@ function GaugeChart({ score, max = 30 }: { score: number; max?: number }) {
 }
 
 export default function ResultsPage() {
-  const { riskScore, riskLevel, mockReports, setTriageScreen, selectedAnswers } = useApp();
+  const { riskScore, riskLevel, setTriageScreen, selectedAnswers } = useApp();
 
   const getRecommendation = (score: number) => {
     if (score >= 20) return { title: 'Seek Emergency Care', desc: 'Visit the nearest hospital casualty department immediately.', type: 'urgent' };
@@ -54,7 +54,7 @@ export default function ResultsPage() {
             Assessment Result
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>
-            Report generated on April 14, 2026
+            Report generated on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
         <button
@@ -148,32 +148,19 @@ export default function ResultsPage() {
             </div>
           </div>
 
-          {/* Past History */}
+          {/* Link to Past Reports */}
           <div className="card" style={{ padding: '24px', flex: 1 }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '16px' }}>Recent Logs</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {mockReports.slice(0, 4).map((r, i) => (
-                <div key={i} style={{
-                  padding: '12px 14px', borderRadius: '10px',
-                  background: i === 0 ? 'var(--red-light)' : 'var(--bg)',
-                  border: `1px solid ${i === 0 ? 'var(--red-border)' : 'var(--border)'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                }}>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-1)' }}>{r.date}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-4)' }}>{r.symptoms.length} symptoms tracked</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '900', color: r.riskLevel === 'High' ? 'var(--red)' : '#B45309' }}>
-                      {r.score}/30
-                    </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-4)', textTransform: 'uppercase', fontWeight: '700' }}>
-                      {r.riskLevel}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '16px' }}>Your History</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px', lineHeight: '1.6' }}>
+              This assessment has been saved to your account. View all your past reports to track your health trends over time.
+            </p>
+            <button
+              onClick={() => window.location.href = '/dashboard/reports'}
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '11px' }}
+            >
+              View Past Reports →
+            </button>
           </div>
         </div>
       </div>

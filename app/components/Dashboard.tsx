@@ -1,7 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useApp } from '../context/AppContext';
+
+interface Report {
+  id: string;
+  createdAt: string;
+  score: number;
+  urgency: string;
+  primaryCategory: string;
+  answers: string;
+}
 
 // ── SVG icons (consistent 16px) ──
 const PlayCircle = () => (
@@ -54,18 +64,20 @@ const ChevronRight = () => (
 );
 
 // ── Chart ──
-const DATA = [
-  { m: 'Oct', v: 8 }, { m: 'Nov', v: 12 }, { m: 'Dec', v: 6 },
-  { m: 'Jan', v: 18 }, { m: 'Feb', v: 14 }, { m: 'Mar', v: 5 }, { m: 'Apr', v: 22 },
-];
 const W = 340, H = 88, PAD = { l: 28, r: 10, t: 8, b: 22 };
 
-function RiskChart() {
+function RiskChart({ data }: { data: { m: string; v: number }[] }) {
+  if (data.length < 2) return (
+    <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-4)', fontSize: '13px' }}>
+      Complete more tests to see your history
+    </div>
+  );
   const iW = W - PAD.l - PAD.r;
   const iH = H - PAD.t - PAD.b;
-  const pts = DATA.map((d, i) => ({
-    x: PAD.l + (i / (DATA.length - 1)) * iW,
-    y: PAD.t + (1 - d.v / 30) * iH,
+  const maxV = Math.max(...data.map(d => d.v), 10);
+  const pts = data.map((d, i) => ({
+    x: PAD.l + (i / (data.length - 1)) * iW,
+    y: PAD.t + (1 - d.v / maxV) * iH,
     ...d,
   }));
   const line = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
@@ -79,8 +91,8 @@ function RiskChart() {
           <stop offset="100%" stopColor="var(--red)" stopOpacity="0"/>
         </linearGradient>
       </defs>
-      {[0, 10, 20, 30].map(v => {
-        const y = PAD.t + (1 - v/30) * iH;
+      {[0, Math.round(maxV/3), Math.round(maxV*2/3), maxV].map(v => {
+        const y = PAD.t + (1 - v/maxV) * iH;
         return (
           <g key={v}>
             <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="var(--border-faint)" strokeWidth="1"/>
@@ -90,8 +102,8 @@ function RiskChart() {
       })}
       <path d={area} fill="url(#rg)"/>
       <path d={line} fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      {pts.map(p => (
-        <g key={p.m}>
+      {pts.map((p, i) => (
+        <g key={i}>
           <circle cx={p.x} cy={p.y} r="3.5" fill="var(--red)" stroke="white" strokeWidth="1.5"/>
           <text x={p.x} y={H-4} fontSize="8" fill="var(--text-4)" textAnchor="middle" fontFamily="Inter,sans-serif">{p.m}</text>
         </g>
@@ -101,13 +113,48 @@ function RiskChart() {
 }
 
 // ── Risk helpers ──
-const riskColor = (r: string) => r === 'High' ? 'var(--red)' : r === 'Medium' ? '#B45309' : '#15803D';
-const riskDot   = (r: string) => r === 'High' ? 'var(--red)' : r === 'Medium' ? '#F59E0B' : '#22C55E';
 
 export default function Dashboard() {
-  const { startTest, mockReports } = useApp();
+  const { startTest } = useApp();
+  const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+
   useEffect(() => { setMounted(true); }, []);
+
+  // Fetch real reports from DB
+  useEffect(() => {
+    const userId = (session?.user as any)?.id;
+    if (!userId) return;
+    fetch(`/api/sessions?userId=${userId}`)
+      .then((r) => r.json())
+      .then((data) => { setReports(Array.isArray(data) ? data : []); })
+      .catch(() => setReports([]))
+      .finally(() => setLoadingReports(false));
+  }, [session]);
+
+  const userName = session?.user?.name || session?.user?.email?.split('@')[0] || 'there';
+  const userImage = session?.user?.image || null;
+  const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const lastReport = reports[0];
+  const lastScore = lastReport?.score ?? null;
+  const lastUrgency = lastReport?.urgency ?? null;
+  const lastDate = lastReport ? new Date(lastReport.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+
+  // Build chart data from real reports (last 7)
+  const chartData = reports.slice(0, 7).reverse().map((r) => ({
+    m: new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short' }),
+    v: r.score ?? 0,
+  }));
+  const peakScore = reports.length > 0 ? Math.max(...reports.map((r) => r.score ?? 0)) : 0;
+
+  const greetingHour = new Date().getHours();
+  const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const urgencyColor = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#B45309' : '#15803D';
+  const urgencyDot = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#F59E0B' : '#22C55E';
 
   return (
     <div className="mobile-padding" style={{ padding: '28px 32px', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
@@ -116,36 +163,31 @@ export default function Dashboard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' }}>
         <div>
           <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: '800', color: 'var(--text-1)', letterSpacing: '-0.5px', lineHeight: 1.2 }}>
-            Good morning, Rahul Sharma
+            {greeting}, {userName}
           </h1>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', marginTop: '4px' }}>
-            Tuesday, April 14, 2026 &nbsp;·&nbsp; Mumbai, India
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        {/* Avatar — same visual as sidebar avatar */}
-        <div style={{
-          width: '38px', height: '38px', borderRadius: '50%',
-          background: 'var(--red)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'white', fontWeight: '700', fontSize: '12px',
-          boxShadow: '0 2px 6px rgb(185 28 28 / 0.3)',
-        }}>RS</div>
+        {userImage ? (
+          <img src={userImage} alt={userName} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
+        ) : (
+          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '12px', boxShadow: '0 2px 6px rgb(185 28 28 / 0.3)' }}>{initials}</div>
+        )}
       </div>
 
-      {/* ── Alert banner ── */}
-      <div className="alert-high" style={{ marginBottom: '22px' }}>
-        <AlertTriangle />
-        <span>
-          <strong>High Risk Detected.</strong> Your last triage score was 22 / 30 — please seek emergency care immediately.
-        </span>
-      </div>
+      {/* ── Alert banner — only show if last test was High ── */}
+      {lastUrgency === 'High' && (
+        <div className="alert-high" style={{ marginBottom: '22px' }}>
+          <AlertTriangle />
+          <span>
+            <strong>High Risk Detected.</strong> Your last triage score was {lastScore} — please seek medical attention.
+          </span>
+        </div>
+      )}
 
       {/* ── Start Test card ── */}
-      <div className="card" style={{
-        padding: '20px 24px',
-        marginBottom: '20px',
-        background: 'white',
-      }}>
+      <div className="card" style={{ padding: '20px 24px', marginBottom: '20px', background: 'white' }}>
         <div className="mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '4px' }}>
@@ -154,57 +196,40 @@ export default function Dashboard() {
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', marginBottom: '10px' }}>
               Complete 8 targeted questions for an AI-powered triage result.
             </div>
-            <div className="code-block hide-mobile" style={{ display: 'inline-block', fontSize: '10.5px' }}>
-              <span className="kw">POST</span> <span className="str">/api/triage/start</span>
-              <span className="cm"> ← Flask · PostgreSQL</span>
-            </div>
           </div>
-          <button
-            id="start-test-btn"
-            className="btn btn-primary"
-            onClick={startTest}
-            style={{ padding: '11px 22px', fontSize: '14px', flexShrink: 0 }}
-          >
+          <button id="start-test-btn" className="btn btn-primary" onClick={startTest} style={{ padding: '11px 22px', fontSize: '14px', flexShrink: 0 }}>
             <PlayCircle /> Start Test
           </button>
         </div>
       </div>
 
-      {/* ── Stat cards — 3 columns ── */}
+      {/* ── Stat cards ── */}
       <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
         {[
           {
             icon: <UserIcon />, iconColor: '#6366F1', iconBg: '#EEF2FF',
-            label: 'Active Profile', value: 'Self',
+            label: 'Active Profile', value: userName,
             tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '2px 9px', borderRadius: '999px' }}>Primary</span>,
           },
           {
             icon: <ClockIcon />, iconColor: 'var(--red)', iconBg: 'var(--red-light)',
-            label: 'Last Test', value: '2 days ago',
-            tag: <span className="badge badge-high">High Risk · 22</span>,
+            label: 'Last Test', value: lastDate ?? 'No tests yet',
+            tag: lastUrgency ? <span className={`badge badge-${lastUrgency.toLowerCase()}`}>{lastUrgency} Risk · {lastScore}</span> : <span style={{ fontSize: '11.5px', color: 'var(--text-4)' }}>—</span>,
           },
           {
             icon: <CalendarIcon />, iconColor: '#B45309', iconBg: '#FFFBEB',
-            label: 'Recommended', value: 'Check Today',
-            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 9px', borderRadius: '999px' }}>Urgent Follow-up</span>,
+            label: 'Total Tests', value: `${reports.length} test${reports.length !== 1 ? 's' : ''}`,
+            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 9px', borderRadius: '999px' }}>{reports.length === 0 ? 'Start your first' : 'View history'}</span>,
           },
         ].map((c, i) => (
           <div key={i} className="card card-lift" style={{ padding: '18px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{
-                width: '34px', height: '34px', borderRadius: 'var(--radius-sm)',
-                background: c.iconBg, color: c.iconColor,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-sm)', background: c.iconBg, color: c.iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {c.icon}
               </div>
               <div>
-                <div style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {c.label}
-                </div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-1)', marginTop: '1px' }}>
-                  {c.value}
-                </div>
+                <div style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{c.label}</div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-1)', marginTop: '1px' }}>{c.value}</div>
               </div>
             </div>
             {c.tag}
@@ -212,10 +237,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ── Chart + Reports — 2 columns ── */}
+      {/* ── Chart + Reports ── */}
       <div className="chart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-
-        {/* Risk Score Line Chart */}
         <div className="card" style={{ padding: '20px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div>
@@ -223,71 +246,59 @@ export default function Dashboard() {
                 <span style={{ color: 'var(--text-3)' }}><TrendIcon /></span>
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>Risk Score History</span>
               </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)', marginTop: '2px' }}>Last 7 months</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)', marginTop: '2px' }}>Last {chartData.length} tests</div>
             </div>
-            <div style={{
-              fontSize: '11px', fontWeight: '700',
-              background: 'var(--red-light)', color: 'var(--red)',
-              border: '1px solid var(--red-border)',
-              padding: '3px 10px', borderRadius: '6px',
-            }}>
-              Peak: 22
-            </div>
+            {peakScore > 0 && (
+              <div style={{ fontSize: '11px', fontWeight: '700', background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-border)', padding: '3px 10px', borderRadius: '6px' }}>
+                Peak: {peakScore}
+              </div>
+            )}
           </div>
-          {mounted && <RiskChart />}
+          {mounted && <RiskChart data={chartData} />}
         </div>
 
-        {/* Recent Reports */}
         <div className="card" style={{ padding: '20px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
               <span style={{ color: 'var(--text-3)' }}><ListIcon /></span>
               <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>Recent Reports</span>
             </div>
-            <button
-              style={{ fontSize: 'var(--text-xs)', color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: '600' }}
-            >
-              View all →
-            </button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {mockReports.map((r, i) => (
-              <div
-                key={i}
-                style={{
-                  display: 'flex', alignItems: 'center', padding: '10px 8px',
-                  borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                  borderBottom: i < mockReports.length - 1 ? '1px solid var(--border-faint)' : 'none',
-                  transition: 'background 0.12s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: riskDot(r.riskLevel), marginRight: '12px', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: '600', color: 'var(--text-1)' }}>{r.date}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '1px' }}>
-                    {r.symptoms.join(', ')}
+
+          {loadingReports ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-4)', fontSize: '13px' }}>Loading...</div>
+          ) : reports.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-4)', fontSize: '13px' }}>
+              No tests yet. Start your first assessment!
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {reports.slice(0, 5).map((r, i) => (
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', borderBottom: i < Math.min(reports.length, 5) - 1 ? '1px solid var(--border-faint)' : 'none' }}>
+                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: urgencyDot(r.urgency), marginRight: '12px', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: '600', color: 'var(--text-1)' }}>
+                      {new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-4)', marginTop: '1px' }}>{r.primaryCategory || 'General'}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: urgencyColor(r.urgency) }}>{r.score}</span>
+                    <span className={`badge badge-${r.urgency?.toLowerCase()}`}>{r.urgency}</span>
+                    <span style={{ color: 'var(--text-4)' }}><ChevronRight /></span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: riskColor(r.riskLevel) }}>{r.score}</span>
-                  <span className={`badge badge-${r.riskLevel.toLowerCase()}`}>{r.riskLevel}</span>
-                  <span style={{ color: 'var(--text-4)' }}><ChevronRight /></span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* ── Footer ── */}
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)' }}>
-          SymptoSense v1.0.4 &nbsp;·&nbsp; Last sync: 2 mins ago
-        </span>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)' }}>SymptoSense · {reports.length} total assessments</span>
         <span style={{ fontSize: '11px', color: 'var(--text-4)', background: 'var(--border-faint)', padding: '3px 10px', borderRadius: '6px', border: '1px solid var(--border)' }}>
-          Flask · PostgreSQL · Next.js
+          Next.js · PostgreSQL
         </span>
       </div>
     </div>
