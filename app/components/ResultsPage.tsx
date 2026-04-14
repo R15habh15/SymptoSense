@@ -73,7 +73,7 @@ export default function ResultsPage() {
 
           {/* Gauge & Analysis */}
           <div className="card" style={{ padding: '32px' }}>
-            <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+            <div className="mobile-flex-stack" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
               <div style={{ flexShrink: 0 }}>
                 <GaugeChart score={riskScore} />
               </div>
