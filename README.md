@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SymptoSense 🩺
 
-## Getting Started
+**SymptoSense** is a high-fidelity, professional-grade healthcare SaaS platform designed for smart symptom triage and health monitoring. Built with a focus on visual excellence, clinical reliability, and cross-platform accessibility, it provides users with an instant, data-driven assessment of their health risks.
 
-First, run the development server:
+---
 
+## ✨ Key Features
+
+### 🧠 Advanced Triage Engine
+- **8-Question Weighted Algorithm**: Evaluates age, symptoms, severity, duration, progression, and critical indicators to calculate a precise risk score (0-30).
+- **Multilingual Support**: Fully localized interface and engine supporting **English**, **Hindi (हिन्दी)**, and **Marathi (मराठी)**.
+- **Family Profiles**: Run assessments for yourself or managed family members, each with distinct health histories.
+
+### 📊 Professional Dashboard
+- **Risk Score Analytics**: Visualized health trends using custom SVG-based line charts.
+- **Triage History**: Full audit trail of past assessments with detailed symptom markers and logic paths.
+- **Interactive UI**: Modern, responsive design using a custom "Deep Crimson" design system tailored for healthcare trust.
+
+### 🛡️ Security & Performance
+- **Next.js 15 App Router**: Leveraging the latest React features for ultra-fast navigation and SEO.
+- **JWT & Auth Guards**: Secure authentication flow with protected dashboard routes.
+- **PostgreSQL Persistence**: Reliable data storage for all user reports and account preferences (Backend Ready).
+- **Fully Responsive**: Pixel-perfect layout for Desktop, Tablet, and Mobile.
+
+---
+
+## 🚀 Technology Stack
+
+### Frontend
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Styling**: Vanilla CSS (Custom Design System) + Tailwind CSS (Core Utils)
+- **Fonts**: [Inter](https://rsms.me/inter/) (UI) & [JetBrains Mono](https://www.jetbrains.com/lp/mono/) (Technical details)
+- **State Management**: React Context API (AppContext)
+
+### Backend (Integration Ready)
+- **API**: Flask (Python)
+- **Database**: PostgreSQL
+- **Architecture**: RESTful Service
+
+---
+
+## 🛠️ Usage & Installation
+
+### 1. Prerequisites
+- Node.js 18.x or higher
+- npm or yarn
+
+### 2. Clone the Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/taksh1507/SymptoSense.git
+cd SymptoSense/symptosense
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Install Dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Run Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🎨 Design System
 
-To learn more about Next.js, take a look at the following resources:
+SymptoSense uses a unified design system defined in `globals.css`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Primary Red**: `#B91C1C` (Deep Crimson)
+- **Background**: `#F9FAFB` (Soft Grey)
+- **Surface**: `#FFFFFF` (White)
+- **Border**: `#E5E7EB`
+- **Shadows**: Custom tiered shadows (`--shadow-sm` to `--shadow-lg`) for depth.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ⚠️ Disclaimer
+**SymptoSense is a decision support tool and is not a replacement for professional medical advice, diagnosis, or treatment.** In case of a medical emergency, please contact local emergency services or visit a hospital immediately.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+Developed with ❤️ for a Healthier Future.
