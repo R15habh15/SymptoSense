@@ -196,6 +196,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ) : (
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #FC8181, #E53E3E)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '11px', flexShrink: 0 }}>{initials}</div>
           )}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A202C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</div>
+            <div style={{ fontSize: '11px', color: '#A0AEC0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>
           </div>
         </div>
         <NavLink id="nav-mobile-logout" icon={<Icons.LogOut />} label={langKey === 'hi' ? 'लॉग आउट' : langKey === 'mr' ? 'लॉग आउट' : 'Log out'} onClick={handleLogout} />
